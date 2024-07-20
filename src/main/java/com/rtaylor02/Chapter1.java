@@ -11,8 +11,8 @@ import java.util.stream.IntStream;
 public class Chapter1 {
     public static void main(String[] args) {
         // Lesson2_ExecutingTasksInParallelWithForkJoinPool.main();
-        // Lesson3_JoiningTheResultsOfTheTasks.main();
-        Lesson3_Challenge.main("1", "2", "3", "4", "5", "6", "7"); // 28
+        Lesson3_JoiningTheResultsOfTheTasks.main();
+        // Lesson3_Challenge.main("1", "2", "3", "4", "5", "6", "7"); // 28
     }
 
     private static class Lesson2_ExecutingTasksInParallelWithForkJoinPool {
@@ -88,7 +88,64 @@ public class Chapter1 {
     
     private static class Lesson3_JoiningTheResultsOfTheTasks {
         public static void main(String... args) {
-            
+            AppleTree[] trees = createTrees(12);
+
+            ForkJoinPool pool = new ForkJoinPool();
+            int totalApples = pool.invoke(new MyRecursiveTask(trees));
+
+            System.out.println("Total apples: " + totalApples);
+        }
+
+        private static AppleTree[] createTrees(int totalTrees) {
+            AppleTree[] trees = new AppleTree[totalTrees];
+
+            for (int i = 0; i < totalTrees; i++) {
+                trees[i] = new AppleTree(4, "Tree" + i);
+            }
+
+            return trees;
+        }
+
+        private static class AppleTree {
+            private int numberOfApples;
+            private String label;
+
+            public AppleTree(int numberOfApples, String label) {
+                this.numberOfApples = numberOfApples;
+                this.label = label;
+            }
+
+            public int getApples() {
+                return numberOfApples;
+            }
+        }
+
+        private static class MyRecursiveTask extends RecursiveTask<Integer> {
+            private int threshold = 2;
+            private AppleTree[] trees;
+
+            public MyRecursiveTask(AppleTree[] trees) {
+                this.trees = trees;
+            }
+
+            @Override
+            protected Integer compute() {
+                // Divide and conquer
+                if (trees.length < threshold) {
+                    System.out.println(Thread.currentThread().getName() + " is counting apples...");
+                    return Arrays.stream(trees).mapToInt(t -> t.getApples()).sum();
+                } else {
+                    AppleTree[] bunch1 = Arrays.copyOfRange(trees, 0, trees.length / 2);
+                    AppleTree[] bunch2 = Arrays.copyOfRange(trees, trees.length / 2, trees.length);
+
+                    MyRecursiveTask leftSum = new MyRecursiveTask(bunch1);
+                    MyRecursiveTask rigthSum = new MyRecursiveTask(bunch2);
+
+                    leftSum.fork();
+
+                    return rigthSum.compute() + leftSum.join();
+                }
+            }
         }
     }
 
