@@ -1,14 +1,18 @@
 package com.rtaylor02;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
+import java.util.stream.IntStream;
 
 public class Chapter1 {
     public static void main(String[] args) {
         // Lesson2_ExecutingTasksInParallelWithForkJoinPool.main();
-        Lesson3_JoiningTheResultsOfTheTasks.main();
+        // Lesson3_JoiningTheResultsOfTheTasks.main();
+        Lesson3_Challenge.main("1", "2", "3", "4", "5", "6", "7"); // 28
     }
 
     private static class Lesson2_ExecutingTasksInParallelWithForkJoinPool {
@@ -86,7 +90,57 @@ public class Chapter1 {
         public static void main(String... args) {
             
         }
+    }
 
+    /**
+     * Challenge:
+     * Given an array of ints, calculate the sum of its elements with 
+     * ForkJoinPool and RecursiveTask
+     */
+    private static class Lesson3_Challenge {
+        MyRecursiveTask task = new MyRecursiveTask();
         
+        private static class MyRecursiveTask extends RecursiveTask<Integer> {
+            private int[] numbers;
+            private int threshold = 4;
+
+            public MyRecursiveTask(int... numbers) {
+                if (numbers.length > 0) {
+                    this.numbers = numbers;
+                } else {
+                    this.numbers = null;
+                }
+            }
+
+            @Override
+            public Integer compute() {
+                // ForkJoinPool follows divide-conquer operation model
+                // Divide tasks if total numbers > threshold. Do it yourself if it's too small
+                if (this.numbers.length < this.threshold) {
+                    Integer result = IntStream.of(numbers).map(i -> Integer.valueOf(i)).sum();
+                    return result;
+                } else {
+                    // Divide task into 2 parts
+                    int[] halfNumbersStart = Arrays.copyOfRange(this.numbers, 0, this.numbers.length / 2);
+                    int[] halfNumbersEnd = Arrays.copyOfRange(this.numbers, this.numbers.length / 2, this.numbers.length);
+                    
+                    // Assign both subtasks to 2 RecursiveTask
+                    MyRecursiveTask leftSum = new MyRecursiveTask(halfNumbersStart);
+                    MyRecursiveTask rightSum = new MyRecursiveTask(halfNumbersEnd);
+
+                    leftSum.fork();
+                    
+                    // Compose result from subresults
+                    return rightSum.compute() + leftSum.join();
+                }
+            }
+        }
+
+        public static void main(String... args) {
+            ForkJoinPool pool = new ForkJoinPool();
+            Integer sum = pool.invoke(new MyRecursiveTask(Arrays.stream(args).map(s -> Integer.valueOf(s)).mapToInt(i -> i).toArray()));
+
+            System.out.println("Sum is: " + sum);
+        }
     }
 }
