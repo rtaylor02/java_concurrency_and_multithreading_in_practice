@@ -2,17 +2,21 @@ package com.rtaylor02;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+import java.util.concurrent.RecursiveAction;
 
 public class Chapter1 {
     public static void main(String[] args) {
         // Lesson2_ExecutingTasksInParallelWithForkJoinPool.main();
-        Lesson3_JoiningTheResultsOfTheTasks.main();
+        // Lesson3_JoiningTheResultsOfTheTasks.main();
         // Lesson3_Challenge.main("1", "2", "3", "4", "5", "6", "7"); // 28
+        Lesson4_RecursiveActionAndRecursiveTask.main();
     }
 
     private static class Lesson2_ExecutingTasksInParallelWithForkJoinPool {
@@ -199,5 +203,97 @@ public class Chapter1 {
 
             System.out.println("Sum is: " + sum);
         }
+    }
+
+    private static class Lesson4_RecursiveActionAndRecursiveTask  {
+        public static void main() {
+            MyRecursiveAction task = new MyRecursiveAction(AppleTree.newTreeGarden(12));
+            
+            ForkJoinPool pool = new ForkJoinPool();
+            // pool.invoke(task);
+            // pool.execute(task); task.join();
+            pool.execute(task); waitPoolForTermination(pool);
+        }
+
+        private static void waitPoolForTermination(ForkJoinPool pool) {
+            try {
+                pool.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+            }
+        }
+        
+        public static class MyRecursiveAction extends RecursiveAction {
+            private AppleTree[] trees;
+            private int threshold = 4;
+            
+            public MyRecursiveAction(AppleTree[] trees) {
+                this.trees = trees;
+            }
+
+            @Override
+            protected void compute() {
+                // Divide and conquer
+                if (trees.length < threshold) {
+                    System.out.println(Thread.currentThread().getName() + " is picking apples...");
+                    Arrays.stream(trees).forEach(t -> t.pickApples());
+                } else {
+                    AppleTree[] subTrees1 = Arrays.copyOfRange(trees, 0, trees.length / 2);
+                    AppleTree[] subTrees2 = Arrays.copyOfRange(trees, trees.length / 2, trees.length);
+
+                    MyRecursiveAction action1 = new MyRecursiveAction(subTrees1);
+                    MyRecursiveAction action2 = new MyRecursiveAction(subTrees2);
+
+                    action1.fork();
+                    action2.compute();
+                    action1.join();
+                }
+            }
+        }
+
+        public static class AppleTree {
+            private final String treeLabel;
+            private final int numberOfApples;
+            
+            public AppleTree(String treeLabel) {
+                this.treeLabel = treeLabel;
+                numberOfApples = 3;
+            }
+
+            public static AppleTree[] newTreeGarden(int size) {
+                AppleTree[] appleTrees = new AppleTree[size];
+                for (int i = 0; i < appleTrees.length; i++) {
+                    appleTrees[i] = new AppleTree("tree#" + i);
+                }
+                return appleTrees;
+            }
+            
+            public int pickApples(String workerName) {
+                try {
+                    //System.out.printf("%s started picking apples from %s \n", workerName, treeLabel);
+                    TimeUnit.SECONDS.sleep(1);
+                    System.out.printf("%s picked %d apples from %s \n", workerName, numberOfApples, treeLabel);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return numberOfApples;
+            }
+            
+            public int pickApples() {
+                return pickApples(toLabel(Thread.currentThread().getName()));
+            }
+            
+            private String toLabel(String threadName) {
+                HashMap<String, String> threadNameToLabel = new HashMap<>();
+                threadNameToLabel.put("ForkJoinPool.commonPool-worker-1", "Alice");
+                threadNameToLabel.put("ForkJoinPool.commonPool-worker-2", "Bob");
+                threadNameToLabel.put("ForkJoinPool.commonPool-worker-3", "Carol");
+                threadNameToLabel.put("ForkJoinPool.commonPool-worker-4", "Dan");
+                
+                return threadNameToLabel.getOrDefault(threadName, threadName);
+            }
+        }
+        
+
     }
 }
