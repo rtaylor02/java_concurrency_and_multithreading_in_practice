@@ -7,9 +7,7 @@ import java.util.concurrent.ForkJoinPool;
 
 public class Main {
     public static void main(String[] args) {
-        AppleTree[] appleGarden = new AppleTree[6];
-
-        List<Callable<Void>> workers = createWorkers(3, createAppleGarden(3));
+        List<Callable<Void>> workers = createWorkers(3, createAppleGarden(6));
         ForkJoinPool.commonPool().invokeAll(workers);
     }
 
@@ -24,12 +22,12 @@ public class Main {
     }
 
     private static List<Callable<Void>> createWorkers(int numberOfWorkers, AppleTree[] garden) {
-        String[] names = createWorkerNames(garden.length);
+        String[] names = createWorkerNames(numberOfWorkers);
 
         List<Callable<Void>> workers = new ArrayList<>(numberOfWorkers);
-        for (int i = 0; i < garden.length; i++) {
-            workers.add(createWorker(i, i + 2, garden, names[i]));
-        }
+        workers.add(createWorker(0, 2, garden, names[0]));
+        workers.add(createWorker(2, 4, garden, names[1]));
+        workers.add(createWorker(4, 6, garden, names[2]));
         
         return workers;
     }
@@ -42,11 +40,10 @@ public class Main {
         return workerNames;
     }
 
-    private static Callable<Void> createWorker(int treeNumberInclusive, int treeNumberExclusive, AppleTree[] garden, String workerName) {
-
+    private static Callable<Void> createWorker(int treeNumberInclusive, int treeNumberExclusive, AppleTree[] trees, String workerName) {
         return () -> {
             for (int i = treeNumberInclusive; i < treeNumberExclusive; i++) {
-                garden[i].pickApples(workerName);
+                trees[i].pickApples(workerName);
             }
 
             return null;

@@ -15,13 +15,13 @@ public class AppleTree {
     String picker = workerName;
 
     for (int i = 0; i < this.totalApples; i++) {
-      System.out.println(picker + " is picking apple #" + i + " from tree #" + this.id);
+      // System.out.println(picker + " is picking apple #" + i + " from tree #" + this.id);
       try {
-        Thread.sleep(1); // To simulate the duration of picking apples from 1 tree
+        Thread.sleep(1000); // To simulate the duration of picking apples from 1 tree
       } catch (InterruptedException ie) {
         System.out.println(ie.getMessage());
       }
-      System.out.println(picker + " finished with tree #" + this.id);
     }
+    System.out.println(picker + " finished with tree #" + this.id);
   }
 }
