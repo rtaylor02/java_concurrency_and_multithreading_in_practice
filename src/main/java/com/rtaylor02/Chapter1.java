@@ -1,5 +1,6 @@
 package com.rtaylor02;
 
+import java.applet.Applet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,7 +17,8 @@ public class Chapter1 {
         // Lesson2_ExecutingTasksInParallelWithForkJoinPool.main();
         // Lesson3_JoiningTheResultsOfTheTasks.main();
         // Lesson3_Challenge.main("1", "2", "3", "4", "5", "6", "7"); // 28
-        Lesson4_RecursiveActionAndRecursiveTask.main();
+        // Lesson4_RecursiveActionAndRecursiveTask.main();
+        Lesson5_ExceptionHandlingAndCancellingATask.main();
     }
 
     private static class Lesson2_ExecutingTasksInParallelWithForkJoinPool {
@@ -245,6 +247,7 @@ public class Chapter1 {
                     MyRecursiveAction action2 = new MyRecursiveAction(subTrees2);
 
                     action1.fork();
+                    action1.cancel(true);
                     action2.compute();
                     action1.join();
                 }
@@ -295,5 +298,82 @@ public class Chapter1 {
         }
         
 
+    }
+
+    private static class Lesson5_ExceptionHandlingAndCancellingATask {
+        private static void main() {
+            MyRecursiveAction task = new MyRecursiveAction(AppleTree.createTrees(36));
+
+            ForkJoinPool pool = new ForkJoinPool();
+            pool.invoke(task);
+        }
+
+        private static class MyException extends Exception {
+            @Override
+            public String getMessage() {
+                return "MyException is thrown";
+            }
+        }
+
+        private static class MyRecursiveAction extends RecursiveAction {
+            private AppleTree[] trees;
+            private int threshold;
+
+            public MyRecursiveAction(AppleTree[] trees) {
+                this.trees = trees;
+                threshold = 4;
+            }
+
+            @Override
+            protected void compute() {
+                // Divide and conquer
+                if (trees.length < threshold) {
+                    this.completeExceptionally(new MyException());
+                    Arrays.stream(trees).map(t -> t.pickApples()).forEach(System.out::println);
+                } else {
+                    AppleTree[] subTrees1 = Arrays.copyOfRange(trees, 0, trees.length / 2);
+                    AppleTree[] subTrees2 = Arrays.copyOfRange(trees, trees.length / 2, trees.length);
+
+                    MyRecursiveAction leftAction = new MyRecursiveAction(subTrees1);
+                    MyRecursiveAction rightAction = new MyRecursiveAction(subTrees2);
+
+                    leftAction.fork();
+                    // leftAction.cancel(true); // Will throw java.util.concurrent.CancellationException
+                    rightAction.compute();
+                    leftAction.join();
+                }
+            }
+        }
+
+        private static class AppleTree {
+            private String label;
+
+            public AppleTree(String label) {
+                this.label = label;
+            }
+
+            public static AppleTree[] createTrees(int numberOfTrees) {
+                AppleTree[] trees = new AppleTree[numberOfTrees];
+                for (int i = 0; i < numberOfTrees; i++) {
+                    trees[i] = new AppleTree("tree" + i);
+                }
+
+                return trees;
+            } 
+
+            public String pickApples(String workerName) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException ie) {
+                    System.out.println("Who woke me up??");
+                }
+
+                return workerName + " is picking apples from " + this.label;
+            }
+
+            public String pickApples() {
+                return pickApples(Thread.currentThread().getName());
+            }
+        }
     }
 }
