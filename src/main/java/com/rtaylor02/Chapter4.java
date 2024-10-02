@@ -37,10 +37,6 @@ public class Chapter4 {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
-
         }
-
-
     }
 }

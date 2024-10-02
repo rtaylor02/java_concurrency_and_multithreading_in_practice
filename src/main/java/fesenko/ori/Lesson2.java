@@ -6,7 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 
 public class Lesson2 {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		AppleTree[] appleTrees = AppleTree.newTreeGarden(6);
 
 		Callable<Void> applePicker1 = createApplePicker(appleTrees, 0, 2, "Alex");
