@@ -22,7 +22,7 @@ public class Chapter1 {
     }
 
     private static class Lesson2_ExecutingTasksInParallelWithForkJoinPool {
-        public static void main(String... args) {
+        public static void main(String... args) throws InterruptedException {
             List<Callable<Void>> workers = createWorkers(3, createAppleGarden(6));
             ForkJoinPool.commonPool().invokeAll(workers);
         }

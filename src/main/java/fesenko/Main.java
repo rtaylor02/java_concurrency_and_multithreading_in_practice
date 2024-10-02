@@ -1,7 +1,7 @@
 package fesenko;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         AppleTree[] trees = AppleTree.createGarden(6);
 
         java.util.concurrent.Callable<Void> worker1 = createWorker(trees, 0, 2, "Alex");
